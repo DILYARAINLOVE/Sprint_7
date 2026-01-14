@@ -1,6 +1,15 @@
 import pytest
 import requests
-from helper import register_new_courier_and_return_login_password, login_courier, delete_courier, BASE_URL
+import sys
+import os
+
+# Добавляем текущую директорию в путь Python
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# Теперь импортируем из helper
+from helper import register_new_courier_and_return_login_password, login_courier, delete_courier
+
+BASE_URL = 'https://qa-scooter.praktikum-services.ru'
 
 @pytest.fixture
 def create_courier():
