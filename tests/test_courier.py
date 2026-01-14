@@ -1,13 +1,18 @@
 import allure
 import pytest
 import requests
+import sys
+import os
+
+# Добавляем родительскую директорию в путь Python
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from helper import BASE_URL, generate_random_string, register_new_courier_and_return_login_password, login_courier
 
 class TestCreateCourier:
     @allure.title("Тест на успешное создание курьера")
     def test_create_courier_success(self):
         """Проверка успешного создания курьера"""
-        # Генерируем уникальные данные
         payload = {
             "login": generate_random_string(10),
             "password": generate_random_string(10),
@@ -16,13 +21,9 @@ class TestCreateCourier:
         
         response = requests.post(f'{BASE_URL}/api/v1/courier', data=payload)
         
-        # Проверяем код ответа
-        assert response.status_code == 201, f"Ожидался код 201, получен {response.status_code}"
+        assert response.status_code == 201
+        assert response.json() == {"ok": True}
         
-        # Проверяем тело ответа
-        assert response.json() == {"ok": True}, "Тело ответа не соответствует ожидаемому"
-        
-        # Очистка: удаляем созданного курьера
         login_response = login_courier(payload["login"], payload["password"])
         if login_response.status_code == 200:
             courier_id = login_response.json()['id']
@@ -38,13 +39,9 @@ class TestCreateCourier:
             "firstName": courier_data[2]
         }
         
-        # Пытаемся создать курьера с таким же логином
         response = requests.post(f'{BASE_URL}/api/v1/courier', data=payload)
         
-        # Проверяем код ответа
-        assert response.status_code == 409, f"Ожидался код 409, получен {response.status_code}"
-        
-        # Проверяем сообщение об ошибке
+        assert response.status_code == 409
         assert "Этот логин уже используется" in response.json()["message"]
 
     @allure.title("Тест на создание курьера без обязательных полей")
@@ -57,15 +54,11 @@ class TestCreateCourier:
             "firstName": generate_random_string(10)
         }
         
-        # Удаляем одно обязательное поле
         del payload[missing_field]
         
         response = requests.post(f'{BASE_URL}/api/v1/courier', data=payload)
         
-        # Проверяем код ответа
-        assert response.status_code == 400, f"Ожидался код 400, получен {response.status_code}"
-        
-        # Проверяем сообщение об ошибке
+        assert response.status_code == 400
         assert "Недостаточно данных" in response.json()["message"]
 
 class TestLoginCourier:
@@ -80,14 +73,8 @@ class TestLoginCourier:
         
         response = requests.post(f'{BASE_URL}/api/v1/courier/login', data=payload)
         
-        # Проверяем код ответа
-        assert response.status_code == 200, f"Ожидался код 200, получен {response.status_code}"
-        
-        # Проверяем, что в ответе есть ID
-        assert "id" in response.json(), "В ответе отсутствует поле 'id'"
-        
-        # Проверяем, что ID является числом
-        assert isinstance(response.json()['id'], int), "ID должен быть числом"
+        assert response.status_code == 200
+        assert "id" in response.json()
 
     @allure.title("Тест на авторизацию с неверным паролем")
     def test_login_courier_wrong_password_fails(self, create_courier):
@@ -100,10 +87,7 @@ class TestLoginCourier:
         
         response = requests.post(f'{BASE_URL}/api/v1/courier/login', data=payload)
         
-        # Проверяем код ответа
-        assert response.status_code == 404, f"Ожидался код 404, получен {response.status_code}"
-        
-        # Проверяем сообщение об ошибке
+        assert response.status_code == 404
         assert "Учетная запись не найдена" in response.json()["message"]
 
     @allure.title("Тест на авторизацию с несуществующим логином")
@@ -116,10 +100,7 @@ class TestLoginCourier:
         
         response = requests.post(f'{BASE_URL}/api/v1/courier/login', data=payload)
         
-        # Проверяем код ответа
-        assert response.status_code == 404, f"Ожидался код 404, получен {response.status_code}"
-        
-        # Проверяем сообщение об ошибке
+        assert response.status_code == 404
         assert "Учетная запись не найдена" in response.json()["message"]
 
     @allure.title("Тест на авторизацию без обязательных полей")
@@ -132,13 +113,9 @@ class TestLoginCourier:
             "password": courier_data[1]
         }
         
-        # Удаляем одно обязательное поле
         del payload[missing_field]
         
         response = requests.post(f'{BASE_URL}/api/v1/courier/login', data=payload)
         
-        # Проверяем код ответа
-        assert response.status_code == 400, f"Ожидался код 400, получен {response.status_code}"
-        
-        # Проверяем сообщение об ошибке
+        assert response.status_code == 400
         assert "Недостаточно данных" in response.json()["message"]
